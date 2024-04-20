@@ -1,0 +1,34 @@
+#include "GDIplusImgSaveMod.hsp"
+#module
+#deffunc bPicLoad str p0, array p1, int p2, local a, local b
+	Exist p0 :a=strsize, 0, gInfo.3, gInfo.25 :If(a<1){Return 0}
+	If(p2>0){a.3=p2} :Buffer a.3 :PicLoad p0 :mRef b, 66
+	a.1=lPeek(b) :sDim p1, a.1 :MemCpy p1, b, a.1, 0, 4
+	Buffer a.3, 1, 1 :gSel a.2
+	Return a.1
+#global
+
+title "BTP Convert Batch"
+
+tmp="[aaa]"
+dirlist tmp,"Translate\\*",3
+notesel tmp
+repeat notemax
+	noteget tmp1,cnt
+	File(cnt)=tmp1
+loop
+
+if length(tmp)=1{if tmp="[aaa]"{dialog "Ž¸”s":end}}
+dialog "("+str(length(File))+")ƒtƒ@ƒCƒ‹‚ð•ÏŠ·‚µ‚Ü‚·"
+
+repeat length(file)
+	si=""+dir_cur+"\\Translate\\"+file(cnt)
+	bload si, buf
+	mes file(cnt)
+	exist si :i.1=strsize :If(i.1<1){dialog "Err:	File Not Found" :return}
+	Dim buf_1
+	bPicLoad si, buf_1 :i.3=stat
+	bsave ""+si+".bin",buf_1
+	title "Finish ["+str(cnt)+"/"+length(file)+"] "+si+" -> bin"
+loop
+dialog "OK"

@@ -1,0 +1,38 @@
+#module			// GDIplusImgSaveMod.hsp		ver 0.98
+/*********   画面イメージセーブ   *****************************************
+imgsave "filename", p1		; BMP、JPEG、GIF、TIFF、PNG 形式で保存します
+	"filename" : 保存するファイル名
+	p1= 1～100(60) : JPEGの圧縮品質
+
+※ WindowsXP以前のOSは gdiplus.dllが必要です。
+***************************************************************************/
+#uselib "gdiplus"
+#func GdiplusStartup		"GdiplusStartup"	int, int, int
+#func GdiplusShutdown		"GdiplusShutdown"	int
+#func GdipCreateBitmapFromGdiDib "GdipCreateBitmapFromGdiDib"	int, int, int
+#func GdipSaveImageToFile	"GdipSaveImageToFile"	int, wstr, int, int
+#func GdipDisposeImage		"GdipDisposeImage"	int
+
+#define global imgsave(%1= "hsptmp.jpg", %2= 60) imgsave_ %1, %2
+#deffunc imgsave_ str filename, int jpeg_quality
+
+	if varptr.GdiplusStartup= 0 : return -1								// gdiplus.dllが必要です
+	
+	f= ".bmp .jpg .gif (≧▽≦)ノ.tiff.png"								// 保存フォーマットを確定
+	fmt= instr(f, 0, getpath(filename,18))
+	if fmt= -1 : return -1
+
+	dim GSI, 4 : GSI= 1													// GDI+ 準備
+	GdiplusStartup varptr.token, varptr.GSI, 0
+
+	mref bm, 67
+	GdipCreateBitmapFromGdiDib bm.6, bm.5, varptr.GpBit					// 対象画像 *pbi, *pBit, GpBitmap
+
+	q= jpeg_quality														// 保存処理
+	ENCODE= 1 , $1D5BE4B5, $452DFA4A, $B35DDD9C, $EBE70551, 1, 4, varptr.q
+	UUID= $557CF400+fmt/5, $11D31A04, $0000739A, $2EF31EF8 
+	GdipSaveImageToFile GpBit, filename, varptr.UUID, varptr.ENCODE
+ 
+	GdipDisposeImage GpBit : GdiplusShutdown varptr.token				// おしまい
+	return 1
+#global

@@ -1,0 +1,54 @@
+#include "GDIplusImgSaveMod.hsp"
+//#runtime "hsp3_64.as"
+
+#module
+;--データをVRAMに書き込んで保存("FileName", <buf>, size, winID)  <stat:FileSize>
+#deffunc bPicSave str p0, var p1, int p2, int p3, local a, local b
+  If(p2<1){Return 0} :a.0=512, (p2+4)/(512*3)+1, gInfo.3, gInfo.25
+  If(p3>0){a.3=p3} :Buffer a.3, a.0, a.1 :mRef b, 66
+  lPoke b, 0, p2 :MemCpy b, p1, p2, 4
+  imgsave p0 :Buffer a.3, 1, 1 :gSel a.2 :Exist p0
+Return strsize
+
+;--VRAMからデータ取り出し("FileName", <buf>, winID)  <stat:size>
+#deffunc bPicLoad str p0, array p1, int p2, local a, local b
+  Exist p0 :a=strsize, 0, gInfo.3, gInfo.25 :If(a<1){Return 0}
+  If(p2>0){a.3=p2} :Buffer a.3 :PicLoad p0 :mRef b, 66
+  a.1=lPeek(b) :sDim p1, a.1 :MemCpy p1, b, a.1, 0, 4
+  Buffer a.3, 1, 1 :gSel a.2
+Return a.1
+
+#global
+
+title "BTP Convert"
+screen 0, 320, 56, 2
+syscolor 15 :boxf :sdim s, $100 :sdim si, $100
+pos 4, 4 :input si, 292, 20
+pos 296, 4 :objsize 20, 20 :button gosub "...", *btn
+pos 156, 28 :objsize 80, 24 :button gosub "圧縮", *btn1
+pos 236, 28 :objsize 80, 24 :button gosub "復元", *btn2
+gsel 0, 1 :redraw 0
+Stop
+
+*btn
+dialog "", 16 :If(stat){ObjPrm 0, refstr}
+return
+
+*btn1
+exist si :i.1=strsize :if(i.1<1){dialog "Err:	File not found" :return}
+sdim buf_0, i.1 :bload si, buf_0, i.1
+bPicSave si+".png", buf_0, i.1, 9 :i.2=stat
+dialog "Finish bin -> png"
+return
+
+*btn2
+tmp=""
+split si,".",tmp
+if length(tmp)=1{dialog "拡張子はpngでなければなりません。":return}
+if tmp(length(tmp)-1)!="png"{dialog "拡張子はpngでなければなりません。":return}
+exist si :i.1=strsize :If(i.1<1){dialog "Err:	File Not Found" :return}
+wait 4 :Dim buf_1
+bPicLoad si, buf_1 :i.3=stat
+bsave ""+si+".bin",buf_1
+dialog "Finish png -> bin"
+return
